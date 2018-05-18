@@ -1,7 +1,7 @@
 import os
 
-folder = 'data/comments'
-out = open(folder + "_compiled.csv", "a")
+folder = 'data/data1'
+out = open(folder + "_compiled.csv", "w+")
 files = os.listdir('./' + folder + "/")
 
 for line in open(folder + "/" + files[0]):
@@ -11,6 +11,8 @@ for i in files[1:]:
     file = open(folder + "/" + i)
     file.next()
     for line in file:
+        if "status" in line:
+            continue
         out.write(line)
     file.close()
 
