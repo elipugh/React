@@ -153,6 +153,7 @@ def predictReacts(weights, features):
 ############################################################
 # print predicted reactions with emojis
 def printprediction(prediction):
+    emojis = ["❤️", "😆", "😲", "😢", "😡"]
     for i in range(len(prediction)):
         print int((100*prediction[i])+0.5), emojis[i]
     print " "
@@ -170,7 +171,6 @@ trainExamples = examples[:trainsz]
 testExamples = examples[trainsz:]
 featureExtractor = extractWordFeatures
 weights = learnPredictor(trainExamples, testExamples, featureExtractor, numIters=100, eta=1, verbose=1)
-emojis = ["❤️", "😆", "😲", "😢", "😡"]
 print " "
 print " "
 print "Today the president signed a wonderful bill"
