@@ -9,10 +9,11 @@ from sklearn.preprocessing import normalize
 
 # TODO: Validation set
 
-# TD-IDF as features
+# TD-IDF as features using uni and bigram
 transformer = TfidfVectorizer(ngram_range=(1,2))
 
 # Read in only relevant columns. Drop all rows with a NaN value
+print("processing data")
 df = pd.read_csv(r"/Users/derekhuang/OneDrive/College/2017-2018/CS221/React/data/data1_compiled.csv",usecols=[1, 9, 10, 11, 12, 13, 14]).dropna(axis=0)
 
 # Drop all rows where there are 0 likes 
@@ -34,25 +35,24 @@ values = v_train.T
 
 # Use TD-IDF as features 
 sentences = s_train.tolist()
-tfidf = transformer.fit_transform(sentences)
+features = transformer.fit_transform(sentences)
+print("data processed")
 
 # Set softmax as the output function to mirror L1 norm
-clf = MLPRegressor(solver='lbfgs', alpha=1e-5, hidden_layer_sizes=(15,), random_state=1)
+print("training...")
+clf = MLPRegressor(solver='lbfgs', alpha=1e-5, hidden_layer_sizes=(20), random_state=1)
 clf.out_activation_ = 'softmax'
-clf.fit(tfidf, values) 
+clf.fit(features, values) 
+print("trained")
 
 # TESTING
-
+print("testing")
 s_test = test.iloc[:,[0]].T.squeeze()
 tfidf_test = transformer.transform(s_test.tolist())
-
 v_test = test.iloc[:,[2,3,4,5,6]].T.squeeze()
 v_test = v_test.div(v_test.sum(axis=0), axis=1)
 v_test.fillna(value=0, inplace=True)
 values_test = v_test.T
-
-print(values_test)
-
 predictions = clf.predict(tfidf_test)
 print("Mean squared error: %.2f" % mean_squared_error(values_test, predictions))
 # Explained variance score: 1 is perfect prediction
