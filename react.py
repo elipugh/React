@@ -28,20 +28,18 @@ def loadCsvData(fileName):
     # open a file
     with open(fileName) as f:
         reader = csv.DictReader(f)
-
-        # loop over each row in the file
         for row in reader:
-
-            # cast each value to a float
-            examples.append((row['status_message'].strip().lower(), np.array([float(row['num_loves']), float(row['num_wows']),\
-             float(row['num_hahas']), float(row['num_sads']), float(row['num_angrys'])])))
+            x = row['status_message'].strip().lower()
+            y = np.array([float(row['num_loves']), float(row['num_wows']),\
+                float(row['num_hahas']), float(row['num_sads']), float(row['num_angrys'])])
+            examples.append((x,y))
     print 'Read %d examples from %s' % (len(examples), fileName)
     return examples
 
 ############################################################
-# unigram feature extraction
+# simple baseline unigram feature extraction
 
-def extractWordFeatures(x):
+def extractUnigramFeatures(x):
     """
     Extract word features for a string x. Words are delimited by
     whitespace characters only.
@@ -50,6 +48,8 @@ def extractWordFeatures(x):
     arr = x.split()
     d={}
     for word in arr:
+        if word[:4] == "http":
+            continue
         if word in d:
             d[word]+= 1
         else:
@@ -57,7 +57,68 @@ def extractWordFeatures(x):
     return d
 
 ############################################################
-# stochastic gradient descent kinda
+# simple baseline bigram feature extraction
+
+def extractBigramFeatures(x):
+    """
+    Extract word features for a string x. Words are delimited by
+    whitespace characters only.
+    Example: "I am what I am" --> {(I,am): 2, (am,what): 1, (what,I): 1}
+    """
+    arr = x.split()
+    d= {}
+    for i in range(len(arr)-1):
+        feature = (arr[i], arr[i+1])
+        if arr[i][:4] == "http" or arr[i+1][:4] == "http":
+            continue
+        if feature in d:
+            d[feature]+= 1
+        else:
+            d[feature]=1
+    return d
+
+############################################################
+# features include both unigram and bigram
+
+def extractCombogramFeatures(x):
+    """
+    Extract word features for a string x. Words are delimited by
+    whitespace characters only.
+    Example: "I am what I am" --> {(I,am): 2, (am,what): 1, (what,I): 1}
+    """
+    arr = x.split()
+    d= extractUnigramFeatures(x)
+    for i in range(len(arr)-1):
+        feature = (arr[i], arr[i+1])
+        if feature in d:
+            d[feature]+= 1
+        else:
+            d[feature]=1
+    return d
+
+############################################################
+# sliding character window feature extraction
+
+def extractCharacterFeatures(x):
+    '''
+    Return a function that takes a string |x| and returns a sparse feature
+    vector consisting of all n-grams of |x| without spaces.
+    EXAMPLE: (n = 3) "I like tacos" --> {'Ili': 1, 'lik': 1, 'ike': 1, ...
+    You may assume that n >= 1.
+    '''
+    n = 6
+    x = x.replace(" ", "")
+    result = {}
+    for i in range(0, len(x)-n+1):
+        feature = x[i:i+n]
+        if feature in result:
+            result[feature] += 1
+        else:
+            result[feature] = 1
+    return result
+
+############################################################
+# gradient of squared loss is just (prediction - y)
 
 def gradient(weights, features, y):
     result={}
@@ -77,42 +138,35 @@ def geterror(examples, weights):
     return total / len(examples)
 
 ############################################################
-# Run regression with pseudo SGD
+# Run regression with SGD
 
 def learnPredictor(trainExamples, testExamples, featureExtractor, numIters, eta, verbose):
 
-    weights = {}  # feature => weight
-    eta = 1
-    trainExamples2 = []
+    # boring stuff. converting tuples from (text,reacts) to (features,reacts)
+    temp = []
     for x,y in trainExamples:
-        trainExamples2.append((featureExtractor(x),y))
+        temp.append((featureExtractor(x),y))
         sum = np.sum(y)
         if sum != 0:
             y /= sum
-    trainExamples = trainExamples2
-    testExamples2 = []
+    trainExamples = temp
+    temp = []
     for x,y in testExamples:
-        testExamples2.append((featureExtractor(x),y))
+        temp.append((featureExtractor(x),y))
         sum = np.sum(y)
         if sum != 0:
             y /= sum
-    testExamples = testExamples2
+    testExamples = temp
 
+    # let's start learning
+    weights = {}  # feature => weight
     for i in range(numIters):
-        eta = 1 / math.sqrt(1.+i)
-        for x,y in trainExamples:
-            grad = gradient(weights, x, y)
-            for k in grad:
-                if k in weights:
-                    weights[k] -= grad[k]*eta
-                else:
-                    weights[k] = -grad[k]*eta
 
-        if ((i % 20) == 0):
-            for x,y in weights.iteritems():
-                norm = np.linalg.norm(y)
-                if norm != 0:
-                    y /= (norm/2)
+        if ((i % 20) == 0):                     # check in on how we're doing and
+            #for x,y in weights.iteritems():    # normalize every once in a while
+            #    norm = np.linalg.norm(y)       # to make sure the weights aren't
+            #    if norm != 0:                  # just massive for some words
+            #        y /= (norm/5)              # accuracy is better w/o this
             if verbose == 1:
                 print " "
                 print "epoch ", i, " out of ", numIters
@@ -121,34 +175,23 @@ def learnPredictor(trainExamples, testExamples, featureExtractor, numIters, eta,
             else:
                 print "epoch ", i, " out of ", numIters
 
+        # The SGD step over the entire train set
+        eta = 1.0 / math.sqrt(1.0+i)   # eta shrinks with time
+        for x,y in trainExamples:
+            grad = gradient(weights, x, y)
+            for k in grad:
+                if k in weights:
+                    weights[k] -= grad[k]*eta
+                else:
+                    weights[k] = -grad[k]*eta
+
     print " "
-    print "finished learning!"
+    print "finished learning! getting accuracy..."
     print "final train error: ", geterror(trainExamples,weights)
     print "final test error: ", geterror(testExamples,weights)
+    print "There are ", len(weights), " weights"
 
     return weights
-
-############################################################
-# character features
-
-def extractCharacterFeatures(n):
-    '''
-    Return a function that takes a string |x| and returns a sparse feature
-    vector consisting of all n-grams of |x| without spaces.
-    EXAMPLE: (n = 3) "I like tacos" --> {'Ili': 1, 'lik': 1, 'ike': 1, ...
-    You may assume that n >= 1.
-    '''
-    def extract(x):
-        x = x.replace(" ", "")
-        result = {}
-        for i in range(0, len(x)-n+1):
-            feature = x[i:i+n]
-            if feature in result:
-                result[feature] += 1
-            else:
-                result[feature] = 1
-        return result
-    return extract
 
 ############################################################
 # predict reactions for a given post
@@ -170,9 +213,9 @@ def predictReacts(weights, features):
 # print predicted reactions with emojis
 
 def printprediction(prediction):
-    emojis = ["❤️", "😆", "😲", "😢", "😡"]
+    emojis = ["❤️ ", "😆", "😲", "😢", "😡"]
     for i in range(len(prediction)):
-        print int((100*prediction[i])+0.5), emojis[i]
+        print emojis[i], ": ", int((100*prediction[i])+0.5)
     print " "
 
 ############################################################
@@ -186,28 +229,30 @@ np.random.shuffle(examples)
 trainsz = 8*len(examples)/10
 trainExamples = examples[:trainsz]
 testExamples = examples[trainsz:]
-featureExtractor = extractWordFeatures
-printerror = int(raw_input("Print error? (0 or 1): "))
-weights = learnPredictor(trainExamples, testExamples, featureExtractor, numIters=100, eta=1, verbose=printerror)
-print " "
+featureExtractor = extractCombogramFeatures
+printerror = int(raw_input("Show error while training? (0 or 1): "))
+iterations = int(raw_input("How much training? (50-200 recommended): "))
+
+# now train the algorithm
+weights = learnPredictor(trainExamples, testExamples, featureExtractor, numIters=iterations, eta=1, verbose=printerror)
+
+# the fun part - seeing some example results
 print " "
 print "Today the president signed a wonderful bill"
-printprediction(predictReacts(weights, extractWordFeatures("today the president signed a wonderful bill")))
+printprediction(predictReacts(weights, extractCombogramFeatures("today the president signed a wonderful bill")))
 print "New cancer cure discovered is incredible"
-printprediction(predictReacts(weights, extractWordFeatures("new cancer cure discovered is incredible")))
-print "this program sucks. it's the worst"
-printprediction(predictReacts(weights, extractWordFeatures("this program sucks its the worst")))
-print "I love my mom."
-printprediction(predictReacts(weights, extractWordFeatures("i love my mom")))
-print " "
+printprediction(predictReacts(weights, extractCombogramFeatures("new cancer cure discovered is incredible")))
+print "this program is terrible. it's the worst"
+printprediction(predictReacts(weights, extractCombogramFeatures("this program sucks its the worst")))
+print "I love my mom. She is the best"
+printprediction(predictReacts(weights, extractCombogramFeatures("i love my mom she is the best")))
 print "Try your own examples and type \"q\" or hit ctrl-c when finished."
 print " "
+# allow the user to try some
 while 1>0:
     query = raw_input("What's on your mind? ")
     if query == "q":
         print " "
         break
-    prediction = predictReacts(weights, extractWordFeatures(query.strip().lower()))
+    prediction = predictReacts(weights, extractCombogramFeatures(query.strip().lower()))
     printprediction(prediction)
-
-
