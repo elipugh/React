@@ -32,7 +32,8 @@ def loadCsvData(fileName):
             x = row['status_message'].strip().lower()
             y = np.array([float(row['num_loves']), float(row['num_wows']),\
                 float(row['num_hahas']), float(row['num_sads']), float(row['num_angrys'])])
-            examples.append((x,y))
+            if !math.isnan(float(row['num_loves'])):
+                examples.append((x,y))
     print 'Read %d examples from %s' % (len(examples), fileName)
     return examples
 
@@ -48,8 +49,8 @@ def extractUnigramFeatures(x):
     arr = x.split()
     d={}
     for word in arr:
-        if word[:4] == "http":
-            continue
+        #if word[:4] == "http":
+        #    continue
         if word in d:
             d[word]+= 1
         else:
@@ -69,8 +70,8 @@ def extractBigramFeatures(x):
     d= {}
     for i in range(len(arr)-1):
         feature = (arr[i], arr[i+1])
-        if arr[i][:4] == "http" or arr[i+1][:4] == "http":
-            continue
+        #if arr[i][:4] == "http" or arr[i+1][:4] == "http":
+        #    continue
         if feature in d:
             d[feature]+= 1
         else:
@@ -134,7 +135,8 @@ def geterror(examples, weights):
     total = 0.0
     for x,y in examples:
         yhat = predictReacts(x, weights)
-        total += np.linalg.norm(y-yhat)
+        err = y-yhat
+        total += np.dot(err,err)
     return total / len(examples)
 
 ############################################################
@@ -176,7 +178,7 @@ def learnPredictor(trainExamples, testExamples, featureExtractor, numIters, eta,
                 print "epoch ", i, " out of ", numIters
 
         # The SGD step over the entire train set
-        eta = 1.0 / math.sqrt(1.0+i)   # eta shrinks with time
+        eta = .05 + 0.5 / math.sqrt(1.0+i)   # eta shrinks with time
         for x,y in trainExamples:
             grad = gradient(weights, x, y)
             for k in grad:
@@ -207,6 +209,10 @@ def predictReacts(weights, features):
     sum = np.sum(result)
     if sum != 0.0:
         result /= sum
+    # a = np.exp(result)
+    # if np.sum(a) == 0:
+    #     return np.zeros(5)
+    # result = a / np.sum(a)
     return result
 
 ############################################################
@@ -256,3 +262,4 @@ while 1>0:
         break
     prediction = predictReacts(weights, extractCombogramFeatures(query.strip().lower()))
     printprediction(prediction)
+
