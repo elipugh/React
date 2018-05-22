@@ -49,8 +49,8 @@ def extractUnigramFeatures(x):
     arr = x.split()
     d={}
     for word in arr:
-        #if word[:4] == "http":
-        #    continue
+        if word[:4] == "http":
+            continue
         if word in d:
             d[word]+= 1
         else:
@@ -70,8 +70,8 @@ def extractBigramFeatures(x):
     d= {}
     for i in range(len(arr)-1):
         feature = (arr[i], arr[i+1])
-        #if arr[i][:4] == "http" or arr[i+1][:4] == "http":
-        #    continue
+        if arr[i][:4] == "http" or arr[i+1][:4] == "http":
+            continue
         if feature in d:
             d[feature]+= 1
         else:
