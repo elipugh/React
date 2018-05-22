@@ -8,7 +8,6 @@ import copy
 import StringIO
 import numpy as np
 from scipy import stats
-from util import *
 
 #############################################################
 #                                                           #
