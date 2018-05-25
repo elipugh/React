@@ -26,6 +26,7 @@ def extractCsv():
     df.assign(
         # lowercase, removed repeated sequences, removed punc
         clean_status_message = '',
+        clean_status_and_link_name = '',
         # has repeats >= 3 characters (i. e. 'abbbb')
         has_long_repeats = 0,
     )
@@ -44,24 +45,33 @@ def extractCsv():
     df.to_csv(out)
     out.close()
 
-def processRow(df, index):
-    cleanStatus, hasLongRepeats = removeLongRepeats(df.at[index, 'status_message'])
+def stripString(string):
+    cleanStatus, hasLongRepeats = removeLongRepeats(string)
     cleanStatus = getWithoutLinks(cleanStatus)
-    cleanStatus = getWithoutPunctuation(cleanStatus)
+    # cleanStatus = getWithoutPunctuation(cleanStatus)
     cleanStatus = cleanStatus.lower()
 
+    return cleanStatus, hasLongRepeats
+
+def processRow(df, index):
+    cleanStatus, statusHasLongRepeats = stripString(df.at[index, 'status_message'])
+    cleanLinkName, linkHasLongRepeats = stripString(df.at[index, 'link_name'])
+
     df.at[index, 'clean_status_message'] = cleanStatus
-    df.at[index, 'has_long_repeats'] = hasLongRepeats
+    df.at[index, 'clean_status_message_and_link'] = cleanStatus + " " + cleanLinkName
 
-    return
+    df.at[index, 'has_long_repeats'] = statusHasLongRepeats
 
-def removeLongRepeats(str):
+def removeLongRepeats(string):
+    if not isinstance(string, str):
+        return '', False
+
     curr = ""
     currCount = 0
     cleanedstr = ""
     hasLongRepeats = False
 
-    for char in str:
+    for char in string:
         if curr == char:
             currCount += 1
         else:
@@ -93,4 +103,4 @@ def getWithoutPunctuation(str):
     return str.translate(str.maketrans('', '', string.punctuation))
 
 # removeUnnecessaryPunctuation("jjjj\"''sa\"jl")
-writeCsv()
+extractCsv()
