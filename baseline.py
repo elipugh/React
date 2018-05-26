@@ -7,6 +7,7 @@ import sys
 import copy
 import StringIO
 import numpy as np
+import csv
 from scipy import stats
 
 #############################################################
@@ -31,7 +32,7 @@ def loadCsvData(fileName):
             x = row['status_message'].strip().lower()
             y = np.array([float(row['num_loves']), float(row['num_wows']),\
                 float(row['num_hahas']), float(row['num_sads']), float(row['num_angrys'])])
-            if !math.isnan(float(row['num_loves'])):
+            if not math.isnan(float(row['num_loves'])):
                 examples.append((x,y))
     print 'Read %d examples from %s' % (len(examples), fileName)
     return examples
