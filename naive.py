@@ -6,6 +6,10 @@ reactions = ['Love', 'Haha', 'Sad', 'Wow', 'Angry']
 # is a struct containing a Counter of reactions denoted as status.reactions
 # and the text of the status
 
+# this code was not used for testing
+# it predicts the same average reactions
+# for every post
+
 def baseline(statuses):
 	reactions_aggregate = collections.Counter()
 	for status in statuses:
