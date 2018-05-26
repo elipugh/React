@@ -12,7 +12,7 @@ transformer = TfidfVectorizer(ngram_range=(1,2))
 
 # Read in only relevant columns. Drop all rows with a NaN value
 print("processing data")
-df = pd.read_csv(r"./aaa_compiled.csv",usecols=[1, 9, 10, 11, 12, 13, 14]).dropna(axis=0)
+df = pd.read_csv(r"./data1_compiled.csv",usecols=[1, 9, 10, 11, 12, 13, 14]).dropna(axis=0)
 
 # Drop all rows where there are 0 likes 
 df = df[df.num_likes != 0]
