@@ -6,8 +6,16 @@ from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer, T
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import normalize
-from sklearn.externals import joblib
+import pickle
 
+# try:
+# 	clf = pickle.load(open("vector.pickel", "rb"))
+# except (OSError, IOError) as e:
+
+features = None
+values = None
+# 0 for TF-IDF, 1 for Word2Vec, 2 for GloVe
+featurizer = 0
 # TD-IDF as features using uni and bigram
 transformer = TfidfVectorizer(ngram_range=(1,2))
 
@@ -30,16 +38,17 @@ v_train = v_train.div(v_train.sum(axis=0), axis=1)
 
 # Set NaN values to 0
 v_train.fillna(value=0, inplace=True)
-print(v_train)
 values = v_train.T
 print(values)
 
 # Use TD-IDF as features 
 sentences = s_train.tolist()
-features = transformer.fit_transform(sentences)
-print("data processed")
-
-# Set softmax as the output function to mirror L1 norm
+if featurizer == 0:
+	features = transformer.fit_transform(sentences)
+	print("data processed")
+elif featurizer == 1:
+	model = Word2Vec(sentences, size=100, window=5, min_count=5, workers=4)
+	# Set softmax as the output function to mirror L1 norm
 print("training...")
 layers=(100)
 # layers=(15)
@@ -49,8 +58,7 @@ clf.fit(features, values)
 # clf.out_activation_ = 'softmax'
 print("trained")
 
-s = pickle.dumps(clf)
-clf2 = pickle.loads(s)
+# pickle.dump(clf, open("vector.pickel", "wb"))
 
 # TESTING
 print("testing")
