@@ -42,6 +42,7 @@ def extractCsv():
         else:
             df.drop([index])
 
+    df = df.sample(frac=1).reset_index(drop=True)
     df.to_csv(out)
     out.close()
 
