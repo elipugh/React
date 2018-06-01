@@ -146,7 +146,7 @@ def geterror(examples, weights):
 ############################################################
 # Run regression with SGD
 
-def learnPredictor(trainExamples, testExamples, featureExtractor, numIters, eta, verbose):
+def learnPredictor(trainExamples, testExamples, featureExtractor, numIters, eta, verbose, printgraph):
 
     # boring stuff. converting tuples from (text,reacts) to (features,reacts)
     temp = []
@@ -180,7 +180,8 @@ def learnPredictor(trainExamples, testExamples, featureExtractor, numIters, eta,
                 print "avg test error: ", geterror(testExamples,weights)
             else:
                 print "epoch ", i, " out of ", numIters
-                errorvector.append(geterror(testExamples,weights))
+                if printgraph == 1:
+                    errorvector.append(geterror(testExamples,weights))
 
         # The SGD step over the entire train set
         eta = .05 + 0.5 / math.sqrt(1.0+i)   # eta shrinks with time
@@ -245,42 +246,44 @@ testExamples = examples[trainsz:]
 featureExtractor = extractCombogramFeatures
 printerror = int(raw_input("Show error while training? (0 or 1): "))
 iterations = int(raw_input("How much training? (50-200 recommended): "))
+printgraph = 0
 
 errorvector = []
 
 # # now train the algorithm
 weights = learnPredictor(trainExamples, testExamples, featureExtractor, numIters=iterations, eta=1, verbose=printerror)
 
-# # the fun part - seeing some example results
-# print " "
-# print "Today the president signed a wonderful bill"
-# printprediction(predictReacts(weights, extractCombogramFeatures("today the president signed a wonderful bill")))
-# print "New cancer cure discovered is incredible"
-# printprediction(predictReacts(weights, extractCombogramFeatures("new cancer cure discovered is incredible")))
-# print "this program is terrible. it's the worst"
-# printprediction(predictReacts(weights, extractCombogramFeatures("this program sucks its the worst")))
-# print "I love my mom. She is the best"
-# printprediction(predictReacts(weights, extractCombogramFeatures("i love my mom she is the best")))
-# print "Try your own examples and type \"q\" or hit ctrl-c when finished."
-# print " "
-# # allow the user to try some
-# while 1>0:
-#     query = raw_input("What's on your mind? ")
-#     if query == "q":
-#         print " "
-#         break
-#     prediction = predictReacts(weights, extractCombogramFeatures(query.strip().lower()))
-#     printprediction(prediction)
+# the fun part - seeing some example results
+print " "
+print "Today the president signed a wonderful bill"
+printprediction(predictReacts(weights, extractCombogramFeatures("today the president signed a wonderful bill")))
+print "New cancer cure discovered is incredible"
+printprediction(predictReacts(weights, extractCombogramFeatures("new cancer cure discovered is incredible")))
+print "this program is terrible. it's the worst"
+printprediction(predictReacts(weights, extractCombogramFeatures("this program sucks its the worst")))
+print "I love my mom. She is the best"
+printprediction(predictReacts(weights, extractCombogramFeatures("i love my mom she is the best")))
+print "Try your own examples and type \"q\" or hit ctrl-c when finished."
+print " "
+# allow the user to try some
+while 1>0:
+    query = raw_input("What's on your mind? ")
+    if query == "q":
+        print " 
+        break
+    prediction = predictReacts(weights, extractCombogramFeatures(query.strip().lower()))
+    printprediction(prediction)
 
-print errorvector
+if printgraph == 1:
+    print errorvector
 
-xvec = [20*i for i in range(1,(iterations/20)+1)]
-fig = plt.figure()
-plt.title("Baseline")
-plt.xlabel("Epochs")
-plt.ylabel("Error")
-plt.plot(xvec, errorvector)
-plt.show()
+    xvec = [20*i for i in range(1,(iterations/20)+1)]
+    fig = plt.figure()
+    plt.title("Baseline")
+    plt.xlabel("Epochs")
+    plt.ylabel("Error")
+    plt.plot(xvec, errorvector)
+    plt.show()
 
 
 
