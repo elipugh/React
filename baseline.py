@@ -6,9 +6,11 @@ import math
 import sys
 import copy
 import StringIO
-import numpy as np
 import csv
+import numpy as np
 from scipy import stats
+import re
+import matplotlib.pyplot as plt
 
 #############################################################
 #                                                           #
@@ -46,15 +48,16 @@ def extractUnigramFeatures(x):
     whitespace characters only.
     Example: "I am what I am" --> {'I': 2, 'am': 2, 'what': 1}
     """
-    arr = x.split()
+    arr = re.split("\W+", x)
     d={}
     for word in arr:
-        if word[:4] == "http":
-            continue
+        #if word[:4] == "http":
+        #    continue
         if word in d:
             d[word]+= 1
         else:
             d[word]=1
+    d["biasfeature"] = 1
     return d
 
 ############################################################
@@ -66,16 +69,17 @@ def extractBigramFeatures(x):
     whitespace characters only.
     Example: "I am what I am" --> {(I,am): 2, (am,what): 1, (what,I): 1}
     """
-    arr = x.split()
+    arr = re.split("\W+", x)
     d= {}
     for i in range(len(arr)-1):
         feature = (arr[i], arr[i+1])
-        if arr[i][:4] == "http" or arr[i+1][:4] == "http":
-            continue
+        #if arr[i][:4] == "http" or arr[i+1][:4] == "http":
+        #    continue
         if feature in d:
             d[feature]+= 1
         else:
             d[feature]=1
+    d["biasfeature"] = 1
     return d
 
 ############################################################
@@ -87,7 +91,7 @@ def extractCombogramFeatures(x):
     whitespace characters only.
     Example: "I am what I am" --> {(I,am): 2, (am,what): 1, (what,I): 1}
     """
-    arr = x.split()
+    arr = re.split("\W+", x)
     d= extractUnigramFeatures(x)
     for i in range(len(arr)-1):
         feature = (arr[i], arr[i+1])
@@ -142,7 +146,7 @@ def geterror(examples, weights):
 ############################################################
 # Run regression with SGD
 
-def learnPredictor(trainExamples, testExamples, featureExtractor, numIters, eta, verbose):
+def learnPredictor(trainExamples, testExamples, featureExtractor, numIters, eta, verbose, printgraph):
 
     # boring stuff. converting tuples from (text,reacts) to (features,reacts)
     temp = []
@@ -164,11 +168,11 @@ def learnPredictor(trainExamples, testExamples, featureExtractor, numIters, eta,
     weights = {}  # feature => weight
     for i in range(numIters):
 
-        if ((i % 20) == 0):                     # check in on how we're doing and
-            #for x,y in weights.iteritems():    # normalize every once in a while
-            #    norm = np.linalg.norm(y)       # to make sure the weights aren't
-            #    if norm != 0:                  # just massive for some words
-            #        y /= (norm/5)              # accuracy is better w/o this
+        if ((i % 20) == 0 and i != 0):                     # check in on how we're doing and
+            # for x,y in weights.iteritems():    # normalize every once in a while
+            #     norm = np.linalg.norm(y)       # to make sure the weights aren't
+            #     if norm != 0:                  # just massive for some words
+            #         y /= (norm/5)              # accuracy is better w/o this
             if verbose == 1:
                 print " "
                 print "epoch ", i, " out of ", numIters
@@ -176,6 +180,8 @@ def learnPredictor(trainExamples, testExamples, featureExtractor, numIters, eta,
                 print "avg test error: ", geterror(testExamples,weights)
             else:
                 print "epoch ", i, " out of ", numIters
+                if printgraph == 1:
+                    errorvector.append(geterror(testExamples,weights))
 
         # The SGD step over the entire train set
         eta = .05 + 0.5 / math.sqrt(1.0+i)   # eta shrinks with time
@@ -189,8 +195,10 @@ def learnPredictor(trainExamples, testExamples, featureExtractor, numIters, eta,
 
     print " "
     print "finished learning! getting accuracy..."
-    print "final train error: ", geterror(trainExamples,weights)
-    print "final test error: ", geterror(testExamples,weights)
+#    print "final train error: ", geterror(trainExamples,weights)
+    b = geterror(testExamples,weights)
+    errorvector.append(b)
+    print "final test error: ", b
     print "There are ", len(weights), " weights"
 
     return weights
@@ -238,8 +246,11 @@ testExamples = examples[trainsz:]
 featureExtractor = extractCombogramFeatures
 printerror = int(raw_input("Show error while training? (0 or 1): "))
 iterations = int(raw_input("How much training? (50-200 recommended): "))
+printgraph = 0
 
-# now train the algorithm
+errorvector = []
+
+# # now train the algorithm
 weights = learnPredictor(trainExamples, testExamples, featureExtractor, numIters=iterations, eta=1, verbose=printerror)
 
 # the fun part - seeing some example results
@@ -258,8 +269,22 @@ print " "
 while 1>0:
     query = raw_input("What's on your mind? ")
     if query == "q":
-        print " "
+        print " 
         break
     prediction = predictReacts(weights, extractCombogramFeatures(query.strip().lower()))
     printprediction(prediction)
+
+if printgraph == 1:
+    print errorvector
+
+    xvec = [20*i for i in range(1,(iterations/20)+1)]
+    fig = plt.figure()
+    plt.title("Baseline")
+    plt.xlabel("Epochs")
+    plt.ylabel("Error")
+    plt.plot(xvec, errorvector)
+    plt.show()
+
+
+
 
