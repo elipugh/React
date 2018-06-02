@@ -49,7 +49,7 @@ df = df[df.num_reactions != 0]
 data, test = train_test_split(df, test_size=0.2, shuffle=False)
 
 # Flag for which featurizer to be used, 0 for TF-IDF, 1 for Word2Vec, 2 for GloVe
-featurizer = 0
+featurizer = 1
 
 # Set filename to load if present
 fileName = None
@@ -59,9 +59,8 @@ else:
 	fileName = "ngrams.pickel"
 
 try:
-	print("model present, loading...")
 	pipeline = pickle.load(open(fileName, "rb"))
-	print("loaded")
+	print("model present, loading...")
 except (OSError, IOError, EOFError) as e:
 	features = None
 
@@ -81,7 +80,7 @@ except (OSError, IOError, EOFError) as e:
 	pipeline = None
 
 	# Set hidden layers
-	layers=(200, 150, 100, 75, 50, 25, 12, 10, 8)
+	layers=(300, 275, 250, 225, 200, 175, 150, 125, 100, 75, 50, 25)
 
 	# Statuses 
 	sentences = s_train.tolist()
@@ -92,24 +91,27 @@ except (OSError, IOError, EOFError) as e:
 	if featurizer == 0:
 		# Pipeline for TF-IDF into MLP
 		pipeline = Pipeline([
-	    ("tfidf vectorizer", TfidfVectorizer(ngram_range=(1,2))),
-	    ("MLP", MLPRegressor(solver='adam', alpha=1e-5, hidden_layer_sizes=layers, random_state=1, early_stopping=True))])
+	    	("tfidf vectorizer", TfidfVectorizer(ngram_range=(1,2))),
+	    	("MLP", MLPRegressor(solver='adam', alpha=1e-5, hidden_layer_sizes=layers, random_state=1, early_stopping=True))])
+		tokens_input = sentences
 
 	elif featurizer == 1:
 		# Obtain corpus from all data, this is OK as it does not require label
 		temp = df.iloc[:,[6]].T.squeeze().tolist()
-		corpus = [temp[i].split() for i in range(len(temp))]
+		corpus = [temp[i].decode('utf-8').split() for i in range(len(temp))]
+		print(len(corpus))
 
 		# Obtain token for training data
-		tokens_input = [sentences[i].split() for i in range(len(sentences))]
+		tokens_input = [sentences[i].decode('utf-8').split() for i in range(len(sentences))]
 
 		# Construct Word2Vec neural net with a 200 neuron hidden layer 
-		model = gensim.models.Word2Vec(corpus, size=200, sg=1, window=5, min_count=5, workers=2, hs=0, negative=10)
+		model = gensim.models.FastText(corpus, size=200, sg=1, window=10, min_count=5, workers=2, hs=0, negative=10)
 		w2v = dict(zip(model.wv.index2word, model.wv.syn0))
+		print(len(w2v))
 
 		# Pipeline into MLP
 		pipeline = Pipeline([
-	    ("tfidf vectorizer", TfidfEmbeddingVectorizer(w2v)),
+	    ("tfidf vectorizer word2vec", TfidfEmbeddingVectorizer(w2v)),
 	    ("MLP", MLPRegressor(solver='adam', alpha=1e-5, hidden_layer_sizes=layers, random_state=1, early_stopping=True))])
 
 	print("data processed")
@@ -128,15 +130,15 @@ print("testing")
 
 s_test = test.iloc[:,[6]].T.squeeze()
 tokens = s_test.tolist()
-s_test_words = [tokens[i].split() for i in range(len(tokens))]
+s_test_words = [tokens[i].decode('utf-8').split() for i in range(len(tokens))]
 
 v_test = test.iloc[:,[0,1,2,4,5]].T.squeeze()
 v_test = v_test.div(v_test.sum(axis=0), axis=1)
 v_test.fillna(value=0, inplace=True)
 values_test = v_test.T
 
-# predictions = pipeline.predict(s_test_words)
-predictions = pipeline.predict(s_test)
+predictions = pipeline.predict(s_test_words)
+# predictions = pipeline.predict(s_test)
 print(s_test)
 # print(values_test)
 
