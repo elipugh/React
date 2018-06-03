@@ -9,3 +9,7 @@ First featurizer: Used an n-gram model with TF-IDF to produce features. MLP is u
   3 hidden layers with 100, 50, 10 neurons: MSE of .06 and R^2 of .22  
   
 Experimenting with various metrics, we saw no significant gain  above using 1 hidden layer with unigram and bigram features. 
+
+## Data
+Retrieve glove dataset at: [http://nlp.stanford.edu/data/glove.6B.zip](here)
+Unzip and copy into 'glove.6B' folder in this working directory
