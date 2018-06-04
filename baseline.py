@@ -137,11 +137,14 @@ def gradient(weights, features, y):
 
 def geterror(examples, weights):
     total = 0.0
+    total2 = 0.0
     for x,y in examples:
         yhat = predictReacts(x, weights)
         err = y-yhat
         total += np.dot(err,err)
-    return total / len(examples)
+        if np.argmax(y) == np.argmax(yhat):
+            total2+=1
+    return (total / len(examples), total2/len(examples))
 
 ############################################################
 # Run regression with SGD
@@ -151,20 +154,21 @@ def learnPredictor(trainExamples, testExamples, featureExtractor, numIters, eta,
     # boring stuff. converting tuples from (text,reacts) to (features,reacts)
     temp = []
     for x,y in trainExamples:
-        temp.append((featureExtractor(x),y))
         sum = np.sum(y)
         if sum != 0:
             y /= sum
+        temp.append((featureExtractor(x),y))
     trainExamples = temp
     temp = []
     for x,y in testExamples:
-        temp.append((featureExtractor(x),y))
         sum = np.sum(y)
         if sum != 0:
             y /= sum
+        temp.append((featureExtractor(x),y))
     testExamples = temp
 
     # let's start learning
+    print "Training"
     weights = {}  # feature => weight
     for i in range(numIters):
 
@@ -181,7 +185,7 @@ def learnPredictor(trainExamples, testExamples, featureExtractor, numIters, eta,
             else:
                 print "epoch ", i, " out of ", numIters
                 if printgraph == 1:
-                    errorvector.append(geterror(testExamples,weights))
+                    errorvector.append(geterror(testExamples,weights)[0])
 
         # The SGD step over the entire train set
         eta = .05 + 0.5 / math.sqrt(1.0+i)   # eta shrinks with time
@@ -196,10 +200,11 @@ def learnPredictor(trainExamples, testExamples, featureExtractor, numIters, eta,
     print " "
     print "finished learning! getting accuracy..."
 #    print "final train error: ", geterror(trainExamples,weights)
-    b = geterror(testExamples,weights)
+    a, b = geterror(testExamples,weights)
     errorvector.append(b)
     print "final test error: ", b
     print "There are ", len(weights), " weights"
+    print "number correct: ", a
 
     return weights
 
@@ -233,6 +238,38 @@ def printprediction(prediction):
     print " "
 
 ############################################################
+# return mean squared error for naive guess
+
+def naivescore(trainExamples, testExamples):
+    temp = []
+    for x,y in trainExamples:
+        sum = np.sum(y)
+        if sum != 0:
+            y /= sum
+        temp.append((x,y))
+    trainExamples = temp
+    temp = []
+    for x,y in testExamples:
+        sum = np.sum(y)
+        if sum != 0:
+            y /= sum
+        temp.append((x,y))
+    testExamples = temp
+
+    average = np.array([0,0,0,0,0])
+    for x,y in trainExamples:
+        average = average + y
+    average /= len(trainExamples)
+    print "Average reacts: ", average
+
+    error = 0.0
+    for x,y in testExamples:
+        error += np.dot(average-y, average-y)
+    print "Naive error: ", error/len(testExamples)
+
+
+
+############################################################
 #                        SCRIPT                            #
 ############################################################
 
@@ -247,11 +284,14 @@ featureExtractor = extractCombogramFeatures
 printerror = int(raw_input("Show error while training? (0 or 1): "))
 iterations = int(raw_input("How much training? (50-200 recommended): "))
 printgraph = 0
-
 errorvector = []
 
+print " "
+naivescore(trainExamples, testExamples)
+print " "
+
 # # now train the algorithm
-weights = learnPredictor(trainExamples, testExamples, featureExtractor, numIters=iterations, eta=1, verbose=printerror)
+weights = learnPredictor(trainExamples, testExamples, featureExtractor, numIters=iterations, eta=1, verbose=printerror, printgraph=printgraph)
 
 # the fun part - seeing some example results
 print " "
@@ -269,7 +309,7 @@ print " "
 while 1>0:
     query = raw_input("What's on your mind? ")
     if query == "q":
-        print " 
+        print " "
         break
     prediction = predictReacts(weights, extractCombogramFeatures(query.strip().lower()))
     printprediction(prediction)
