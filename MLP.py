@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import csv, itertools, random, math,sys
 import pandas as pd
 import numpy as np
@@ -41,6 +42,12 @@ class TfidfEmbeddingVectorizer(object):
                 for words in X
             ])
 
+def printprediction(prediction):
+    emojis = ["❤️ ", "😆", "😲", "😢", "😡"]
+    for i in range(len(prediction)):
+        print emojis[i], ": ", int((100*prediction[i])+0.5)
+    print " "
+
 print("processing data")
 df = pd.read_csv(r"./data2_compiled.csv",usecols=[2, 4, 6, 7, 8, 11, 21]).dropna(axis=0)
 
@@ -51,7 +58,7 @@ df = df[df.num_reactions != 0]
 data, test = train_test_split(df, test_size=0.2, shuffle=False)
 
 # Flag for which featurizer to be used, 0 for TF-IDF, 1 for Word2Vec, 2 for GloVe
-featurizer = 2
+featurizer = input("Which featurizer? ")
 
 # Set filename to load if present
 fileName = None
@@ -171,8 +178,8 @@ for elem in predictions:
     for i in range(5):
         elem[i] = max(0, elem[i]) / float(tot)
 
-print(len(s_test_words))
-print(len(predictions))
+# print(len(s_test_words))
+# print(len(predictions))
 
 # Print out predictions
 # for i in range(len(predictions)):
@@ -197,3 +204,21 @@ for prediction, value in zip(predictions, values_test.itertuples()):
     else:
         wrong += 1
 print "Most popular reactions correct: ", float(right)/(wrong+right)
+print " "
+
+while 1>0:
+    query = raw_input("What's on your mind? ")
+    if query == "q":
+        print " "
+        break
+    prediction = pipeline.predict([query])[0]
+    tot = 0
+    for i in range(5):
+        if prediction[i] < 0:
+            prediction[i] = 0
+    sum = np.sum(prediction)
+    if sum != 0.0:
+        prediction /= sum
+    printprediction(prediction)
+
+
