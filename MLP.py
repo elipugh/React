@@ -206,19 +206,25 @@ for prediction, value in zip(predictions, values_test.itertuples()):
 print "Most popular reactions correct: ", float(right)/(wrong+right)
 print " "
 
-while 1>0:
-    query = raw_input("What's on your mind? ")
-    if query == "q":
-        print " "
-        break
-    prediction = pipeline.predict([query])[0]
-    tot = 0
-    for i in range(5):
-        if prediction[i] < 0:
-            prediction[i] = 0
-    sum = np.sum(prediction)
-    if sum != 0.0:
-        prediction /= sum
-    printprediction(prediction)
+
+
+
+experiment = input("Do you want to try some sample statuses? (0 or 1): ")
+print " "
+if experiment:
+    while 1>0:
+        query = raw_input("What's on your mind? ")
+        if query == "q":
+            print " "
+            break
+        prediction = pipeline.predict([query])[0]
+        tot = 0
+        for i in range(5):
+            if prediction[i] < 0:
+                prediction[i] = 0
+        sum = np.sum(prediction)
+        if sum != 0.0:
+            prediction /= sum
+        printprediction(prediction)
 
 
