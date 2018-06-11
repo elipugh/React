@@ -48,6 +48,11 @@ def printprediction(prediction):
         print emojis[i], ": ", int((100*prediction[i])+0.5)
     print " "
 
+def printprediction2(prediction):
+    emojis = ["😡", "😆", "❤️ ", "😢", "😲"]
+    for i in range(len(prediction)):
+        print emojis[i], ": ", int((100*prediction[i])+0.5)
+
 print("processing data")
 df = pd.read_csv(r"./data2_compiled.csv",usecols=[2, 4, 6, 7, 8, 11, 21]).dropna(axis=0)
 
@@ -206,7 +211,25 @@ for prediction, value in zip(predictions, values_test.itertuples()):
 print "Most popular reactions correct: ", float(right)/(wrong+right)
 print " "
 
+print s_test
+print " "
+print "------------------------------------------------------------------------------------"
+print " "
+print values_test
+print " "
+print "------------------------------------------------------------------------------------"
+print " "
 
+for prediction, value, post in zip(predictions, values_test.itertuples(), s_test.tolist()):
+    m =mean_squared_error([prediction], [value[1:]])
+    if m < 0.19 and m > .18:
+        print post
+        print "Predicted: "
+        printprediction2(prediction)
+        print "Real:"
+        printprediction2(value[1:])
+        print "Error: ", m
+        print " "
 
 
 experiment = input("Do you want to try some sample statuses? (0 or 1): ")
