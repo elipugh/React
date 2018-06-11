@@ -229,14 +229,6 @@ for prediction, value in zip(predictions, values_test.itertuples()):
 print "Most popular reactions correct: ", float(right)/(wrong+right)
 print " "
 
-print s_test
-print " "
-print "------------------------------------------------------------------------------------"
-print " "
-print values_test
-print " "
-print "------------------------------------------------------------------------------------"
-print " "
 
 for prediction, value, post in zip(predictions, values_test.itertuples(), s_test.tolist()):
     m =mean_squared_error([prediction], [value[1:]])
