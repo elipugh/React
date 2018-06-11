@@ -250,7 +250,7 @@ if experiment:
         if query == "q":
             print " "
             break
-        prediction = pipeline.predict([query])[0]
+        prediction = pipeline.predict([query.decode('utf-8').split()])[0]
         tot = 0
         for i in range(5):
             if prediction[i] < 0:
@@ -258,6 +258,6 @@ if experiment:
         sum = np.sum(prediction)
         if sum != 0.0:
             prediction /= sum
-        printprediction(prediction)
+        printprediction2(prediction)
 
 
