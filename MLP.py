@@ -127,7 +127,6 @@ except (OSError, IOError, EOFError) as e:
         # tokens_input = [sentences[i].split() for i in range(len(sentences))]
 
         # Construct Word2Vec neural net with a 200 neuron hidden layer 
-        # model = gensim.models.FastText(corpus, size=200, sg=1, window=10, min_count=5, workers=2, hs=0, negative=10)
         model = gensim.models.Word2Vec(corpus, size=200, sg=1, window=10, min_count=5, workers=2, hs=0, negative=10)
         w2v = dict(zip(model.wv.index2word, model.wv.syn0))
 
@@ -144,6 +143,25 @@ except (OSError, IOError, EOFError) as e:
 
         pipeline = Pipeline([
         ("tfidf vectorizer glove", TfidfEmbeddingVectorizer(w2v)),
+        ("MLP", MLPRegressor(solver='adam', alpha=1e-5, hidden_layer_sizes=layers, random_state=1, early_stopping=True))])
+    elif featurizer == 3:
+        print("FastText")
+        # Obtain corpus from all data, this is OK as it does not require label
+        temp = df.iloc[:,[6]].T.squeeze().tolist()
+        corpus = [temp[i].decode('utf-8').split() for i in range(len(temp))]
+        # corpus = [temp[i].split() for i in range(len(temp))]
+
+        # Obtain token for training data
+        tokens_input = [sentences[i].decode('utf-8').split() for i in range(len(sentences))]
+        # tokens_input = [sentences[i].split() for i in range(len(sentences))]
+
+        # Construct Word2Vec neural net with a 200 neuron hidden layer 
+        model = gensim.models.FastText(corpus, size=200, sg=1, window=10, min_count=5, workers=2, hs=0, negative=10)
+        w2v = dict(zip(model.wv.index2word, model.wv.syn0))
+
+        # Pipeline into MLP
+        pipeline = Pipeline([
+        ("tfidf vectorizer word2vec", TfidfEmbeddingVectorizer(w2v)),
         ("MLP", MLPRegressor(solver='adam', alpha=1e-5, hidden_layer_sizes=layers, random_state=1, early_stopping=True))])
 
     print("data processed")
