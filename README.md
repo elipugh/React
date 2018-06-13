@@ -1,4 +1,5 @@
 # React
+A Facebook reaction predictor
 Stanford CS221 Final Project
 
 ## Data
