@@ -13,4 +13,4 @@ Read our [report](https://github.com/elipugh/React/blob/master/react.pdf).
 
 Read our poster:
 
-![poster](https://github.com/elipugh/React/blob/master/react_poster.pdf)
+![poster](https://github.com/elipugh/React/blob/master/react_poster.png)
